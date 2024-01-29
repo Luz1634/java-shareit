@@ -1,2 +1,3 @@
 # java-shareit
-Template repository for Shareit project.
+
+![](src/main/resources/DB.png)

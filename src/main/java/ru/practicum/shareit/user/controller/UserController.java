@@ -25,20 +25,20 @@ import static java.util.stream.Collectors.toList;
 @Validated
 public class UserController {
 
-    private final UserService userService;
-    private final UserMapper userMapper;
+    private final UserService service;
+    private final UserMapper mapper;
 
     @GetMapping("/{userId}")
     public UserResponse getUser(@Min(value = 1, message = "UserId должно быть больше 0") @PathVariable long userId) {
         log.info("GET запрос - getUser, userId:  " + userId);
-        return userMapper.toUserResponse(userService.getUser(userId));
+        return mapper.toUserResponse(service.getUser(userId));
     }
 
     @GetMapping
     public List<UserResponse> getAllUsers() {
         log.info("GET запрос - getAllUsers");
-        return userService.getAllUsers().stream()
-                .map(userMapper::toUserResponse)
+        return service.getAllUsers().stream()
+                .map(mapper::toUserResponse)
                 .collect(toList());
     }
 
@@ -46,7 +46,7 @@ public class UserController {
     @Validated(OnCreate.class)
     public UserResponse addUser(@Valid @RequestBody UserRequest userRequest) {
         log.info("POST запрос - addUser, UserRequest: " + userRequest.toString());
-        return userMapper.toUserResponse(userService.addUser(userMapper.toUser(userRequest)));
+        return mapper.toUserResponse(service.addUser(mapper.toUser(userRequest)));
     }
 
     @PatchMapping("/{userId}")
@@ -54,14 +54,14 @@ public class UserController {
     public UserResponse updateUser(@Valid @RequestBody UserRequest userRequest,
                                    @Min(value = 1, message = "UserId должно быть больше 0") @PathVariable long userId) {
         log.info("PATCH запрос - updateUser, userId: " + userId + ", UserRequest:  " + userRequest.toString());
-        User user = userMapper.toUser(userRequest);
+        User user = mapper.toUser(userRequest);
         user.setId(userId);
-        return userMapper.toUserResponse(userService.updateUser(user));
+        return mapper.toUserResponse(service.updateUser(user));
     }
 
     @DeleteMapping("/{userId}")
     public UserResponse deleteUser(@Min(value = 1, message = "UserId должно быть больше 0") @PathVariable long userId) {
         log.info("DELETE запрос - deleteUser, userId: " + userId);
-        return userMapper.toUserResponse(userService.deleteUser(userId));
+        return mapper.toUserResponse(service.deleteUser(userId));
     }
 }

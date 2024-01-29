@@ -1,4 +1,4 @@
-package ru.practicum.shareit.user.model;
+package ru.practicum.shareit.item.dto;
 
 import lombok.*;
 
@@ -8,8 +8,7 @@ import lombok.*;
 @NoArgsConstructor
 @EqualsAndHashCode
 @ToString
-public class User {
+public class ItemBookingInfoForOwner {
     private long id;
-    private String name;
-    private String email;
+    private long bookerId;
 }

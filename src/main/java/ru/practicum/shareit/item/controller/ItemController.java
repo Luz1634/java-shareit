@@ -4,11 +4,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.shareit.item.mapper.ItemMapper;
-import ru.practicum.shareit.item.service.ItemService;
-import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.item.dto.CommentRequest;
+import ru.practicum.shareit.item.dto.CommentResponse;
 import ru.practicum.shareit.item.dto.ItemControllerRequest;
 import ru.practicum.shareit.item.dto.ItemControllerResponse;
+import ru.practicum.shareit.item.mapper.CommentMapper;
+import ru.practicum.shareit.item.mapper.ItemMapper;
+import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.item.service.ItemService;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
@@ -24,8 +27,9 @@ import static java.util.stream.Collectors.toList;
 @Validated
 public class ItemController {
 
-    private final ItemService itemService;
-    private final ItemMapper itemMapper;
+    private final ItemService service;
+    private final ItemMapper mapper;
+    private final CommentMapper commentMapper;
 
     @GetMapping("/{itemId}")
     public ItemControllerResponse getItem(@Min(value = 1, message = "UserId должно быть больше 0")
@@ -33,16 +37,14 @@ public class ItemController {
                                           @Min(value = 1, message = "ItemId должно быть больше 0")
                                           @PathVariable long itemId) {
         log.info("GET запрос - getItem, UserId: " + userId + ", ItemId: " + itemId);
-        return itemMapper.toItemControllerResponse(itemService.getItem(itemId));
+        return service.getItem(userId, itemId);
     }
 
     @GetMapping
     public List<ItemControllerResponse> getOwnerItems(@Min(value = 1, message = "UserId должно быть больше 0")
                                                       @RequestHeader("X-Sharer-User-Id") long userId) {
         log.info("GET запрос - getOwnerItems, UserId: " + userId);
-        return itemService.getOwnerItems(userId).stream()
-                .map(itemMapper::toItemControllerResponse)
-                .collect(toList());
+        return service.getOwnerItems(userId);
     }
 
     @GetMapping("/search")
@@ -53,8 +55,8 @@ public class ItemController {
         if (text == null || text.isBlank()) {
             return new ArrayList<>();
         }
-        return itemService.searchItems(text).stream()
-                .map(itemMapper::toItemControllerResponse)
+        return service.searchItems(text).stream()
+                .map(mapper::toItemControllerResponse)
                 .collect(toList());
     }
 
@@ -64,7 +66,16 @@ public class ItemController {
                                              @RequestHeader("X-Sharer-User-Id") long userId) {
         log.info("POST запрос - addNewItem, UserId: " + userId +
                 ", ItemControllerRequest: " + itemControllerRequest.toString());
-        return itemMapper.toItemControllerResponse(itemService.addItem(itemMapper.toItem(itemControllerRequest), userId));
+        return mapper.toItemControllerResponse(service.addItem(mapper.toItem(itemControllerRequest), userId));
+    }
+
+    @PostMapping("/{itemId}/comment")
+    public CommentResponse addComment(@Min(value = 1, message = "UserId должно быть больше 0")
+                                      @RequestHeader("X-Sharer-User-Id") long userId,
+                                      @Min(value = 1, message = "ItemId должно быть больше 0")
+                                      @PathVariable long itemId,
+                                      @Valid @RequestBody CommentRequest commentRequest) {
+        return commentMapper.toCommentResponse(service.addComment(userId, itemId, commentRequest));
     }
 
     @PatchMapping("/{itemId}")
@@ -75,9 +86,9 @@ public class ItemController {
                                              @PathVariable long itemId) {
         log.info("PATCH запрос - updateItem, UserId: " + userId + ", ItemId: " + itemId +
                 ", ItemControllerRequest: " + itemControllerRequest.toString());
-        Item item = itemMapper.toItem(itemControllerRequest);
+        Item item = mapper.toItem(itemControllerRequest);
         item.setId(itemId);
-        return itemMapper.toItemControllerResponse(itemService.updateItem(item, userId));
+        return mapper.toItemControllerResponse(service.updateItem(item, userId));
     }
 
     @DeleteMapping("/{itemId}")
@@ -86,6 +97,6 @@ public class ItemController {
                                              @Min(value = 1, message = "ItemId должно быть больше 0")
                                              @PathVariable long itemId) {
         log.info("DELETE запрос - deleteItem, UserId: " + userId + ", ItemId: " + itemId);
-        return itemMapper.toItemControllerResponse(itemService.deleteItem(userId, itemId));
+        return mapper.toItemControllerResponse(service.deleteItem(userId, itemId));
     }
 }
