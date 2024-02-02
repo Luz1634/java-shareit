@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.model.GetNonExistObjectException;
 import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.user.dto.UserRequest;
+import ru.practicum.shareit.user.dto.UserResponse;
 import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
@@ -19,47 +21,52 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository repository;
     private final UserMapper mapper;
+
     private final ItemRepository itemRepository;
 
     @Override
-    public User getUser(long userId) {
-        return mapper.toUser(repository.findById(userId)
+    public UserResponse getUser(long userId) {
+        return mapper.toUserResponse(repository.findById(userId)
                 .orElseThrow(() -> new GetNonExistObjectException("User с заданным id = " + userId + " не найден")));
     }
 
     @Override
-    public List<User> getAllUsers() {
-        return repository.findAll().stream().map(mapper::toUser).collect(toList());
+    public List<UserResponse> getAllUsers() {
+        return repository.findAll().stream().map(mapper::toUserResponse).collect(toList());
     }
 
     @Override
     @Transactional
-    public User addUser(User user) {
-        return mapper.toUser(repository.save(mapper.toUserDb(user)));
+    public UserResponse addUser(UserRequest userRequest) {
+        return mapper.toUserResponse(repository.save(mapper.toUser(userRequest)));
     }
 
     @Override
-    public User updateUser(User user) {
-        User userOld = mapper.toUser(repository.findById(user.getId())
-                .orElseThrow(() -> new GetNonExistObjectException("User с заданным id = " + user.getId() + " не найден")));
+    @Transactional
+    public UserResponse updateUser(long userId, UserRequest userRequest) {
+        User userOld = repository.findById(userId)
+                .orElseThrow(() -> new GetNonExistObjectException("User с заданным id = " + userId + " не найден"));
 
-        if (user.getName() == null) {
+        User user = mapper.toUser(userRequest);
+        user.setId(userId);
+
+        if (user.getName() == null || user.getName().isBlank()) {
             user.setName(userOld.getName());
         }
-        if (user.getEmail() == null) {
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
             user.setEmail(userOld.getEmail());
         }
 
-        return mapper.toUser(repository.save(mapper.toUserDb(user)));
+        return mapper.toUserResponse(repository.save(user));
     }
 
     @Override
     @Transactional
-    public User deleteUser(long userId) {
-        User user = mapper.toUser(repository.findById(userId)
-                .orElseThrow(() -> new GetNonExistObjectException("User с заданным id = " + userId + " не найден")));
+    public UserResponse deleteUser(long userId) {
+        User user = repository.findById(userId)
+                .orElseThrow(() -> new GetNonExistObjectException("User с заданным id = " + userId + " не найден"));
         itemRepository.deleteByOwnerId(userId);
         repository.deleteById(userId);
-        return user;
+        return mapper.toUserResponse(user);
     }
 }

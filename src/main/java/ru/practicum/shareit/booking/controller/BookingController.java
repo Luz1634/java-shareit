@@ -6,16 +6,11 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.booking.dto.BookingRequest;
 import ru.practicum.shareit.booking.dto.BookingResponse;
-import ru.practicum.shareit.booking.mapper.BookingMapper;
-import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.service.BookingService;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import java.util.List;
-
-import static java.util.stream.Collectors.toList;
 
 @RestController
 @RequestMapping(path = "/bookings")
@@ -25,7 +20,6 @@ import static java.util.stream.Collectors.toList;
 public class BookingController {
 
     private final BookingService service;
-    private final BookingMapper mapper;
 
     @GetMapping("/{bookingId}")
     public BookingResponse getBooking(@Min(value = 1, message = "UserId должно быть больше 0")
@@ -33,7 +27,7 @@ public class BookingController {
                                       @Min(value = 1, message = "UserId должно быть больше 0")
                                       @PathVariable long bookingId) {
         log.info("GET запрос - getBooking, UserId: " + userId + ", BookingId: " + bookingId);
-        return mapper.toBookingResponse(service.getBooking(userId, bookingId));
+        return service.getBooking(userId, bookingId);
     }
 
     @GetMapping
@@ -41,19 +35,15 @@ public class BookingController {
                                                  @RequestHeader("X-Sharer-User-Id") long userId,
                                                  @RequestParam(defaultValue = "ALL") String state) {
         log.info("GET запрос - getUserBookings, UserId: " + userId + ", State: " + state);
-        return service.getUserBooking(userId, state).stream()
-                .map(mapper::toBookingResponse)
-                .collect(toList());
+        return service.getUserBookings(userId, state);
     }
 
     @GetMapping("/owner")
-    public List<BookingResponse> getOwnerBooking(@Min(value = 1, message = "UserId должно быть больше 0")
-                                                 @RequestHeader("X-Sharer-User-Id") long userId,
-                                                 @RequestParam(defaultValue = "ALL") String state) {
+    public List<BookingResponse> getOwnerBookings(@Min(value = 1, message = "UserId должно быть больше 0")
+                                                  @RequestHeader("X-Sharer-User-Id") long userId,
+                                                  @RequestParam(defaultValue = "ALL") String state) {
         log.info("GET запрос - getUserBookings, UserId: " + userId + ", State: " + state);
-        return service.getOwnerBooking(userId, state).stream()
-                .map(mapper::toBookingResponse)
-                .collect(toList());
+        return service.getOwnerBookings(userId, state);
     }
 
     @PostMapping
@@ -62,9 +52,7 @@ public class BookingController {
                                       @Valid @RequestBody BookingRequest bookingRequest) {
         log.info("POST запрос - addBooking, UserId: " + userId +
                 ", BookingRequest: " + bookingRequest.toString());
-        Booking booking = mapper.toBooking(bookingRequest);
-        booking.setStatus(BookingStatus.WAITING);
-        return mapper.toBookingResponse(service.addBooking(userId, booking));
+        return service.addBooking(userId, bookingRequest);
     }
 
     @PatchMapping("/{bookingId}")
@@ -75,6 +63,6 @@ public class BookingController {
                                           @RequestParam("approved") Boolean isApprove) {
         log.info("PATCH запрос - approveBooking, UserId: " + userId +
                 ", isApprove: " + isApprove.toString());
-        return mapper.toBookingResponse(service.approveBooking(userId, bookingId, isApprove));
+        return service.approveBooking(userId, bookingId, isApprove);
     }
 }

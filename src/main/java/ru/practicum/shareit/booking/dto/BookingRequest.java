@@ -17,12 +17,12 @@ import java.time.LocalDateTime;
 // Validation
 @DateEndAfterStart(message = "Дата старта и конца указана неверно")
 public class BookingRequest {
-    @NotNull(message = "ItemId пустой или null")
-    @Min(value = 1, message = "ItemId должно быть больше 0")
-    private Long itemId;
     @NotNull(message = "Start пустой или null")
     @FutureOrPresent(message = "Start указан в прошлом")
     private LocalDateTime start;
     @NotNull(message = "Start пустой или null")
     private LocalDateTime end;
+    @NotNull(message = "ItemId пустой или null")
+    @Min(value = 1, message = "ItemId должно быть больше 0")
+    private Long itemId;
 }

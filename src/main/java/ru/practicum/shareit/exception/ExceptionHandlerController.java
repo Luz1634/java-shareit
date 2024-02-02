@@ -73,10 +73,10 @@ public class ExceptionHandlerController {
         return response;
     }
 
-    @ResponseStatus(HttpStatus.CONFLICT)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     @ExceptionHandler
-    public ExceptionHandlerResponse addDuplicate(AddDuplicateException exception) {
-        ExceptionHandlerResponse response = new ExceptionHandlerResponse("Создание дубликата объекта",
+    public ExceptionHandlerResponse nonOwnerAccess(NonOwnerAccessException exception) {
+        ExceptionHandlerResponse response = new ExceptionHandlerResponse("Обращение к объекту без права доступа",
                 exception.getMessage());
         log.warn(response.toString());
         return response;
