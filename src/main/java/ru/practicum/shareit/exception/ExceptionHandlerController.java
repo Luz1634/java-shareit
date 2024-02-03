@@ -1,6 +1,7 @@
 package ru.practicum.shareit.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.JDBCException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
@@ -9,9 +10,7 @@ import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import ru.practicum.shareit.exception.model.AddDuplicateException;
-import ru.practicum.shareit.exception.model.ExceptionHandlerResponse;
-import ru.practicum.shareit.exception.model.GetNonExistObjectException;
+import ru.practicum.shareit.exception.model.*;
 
 import javax.validation.ConstraintViolationException;
 import java.util.ArrayList;
@@ -74,11 +73,37 @@ public class ExceptionHandlerController {
         return response;
     }
 
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler
+    public ExceptionHandlerResponse nonOwnerAccess(NonOwnerAccessException exception) {
+        ExceptionHandlerResponse response = new ExceptionHandlerResponse("Обращение к объекту без права доступа",
+                exception.getMessage());
+        log.warn(response.toString());
+        return response;
+    }
+
     @ResponseStatus(HttpStatus.CONFLICT)
     @ExceptionHandler
-    public ExceptionHandlerResponse addDuplicate(AddDuplicateException exception) {
-        ExceptionHandlerResponse response = new ExceptionHandlerResponse("Создание дубликата объекта",
+    public ExceptionHandlerResponse jdbcException(JDBCException exception) {
+        ExceptionHandlerResponse response = new ExceptionHandlerResponse("Ошибка при работе с БД",
+                exception.getSQLException().getMessage());
+        log.warn(response.toString());
+        return response;
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler
+    public ExceptionHandlerResponse unavailableObject(UnavailableObjectException exception) {
+        ExceptionHandlerResponse response = new ExceptionHandlerResponse("Указанный объект не доступен",
                 exception.getMessage());
+        log.warn(response.toString());
+        return response;
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler
+    public ExceptionHandlerResponse unsupportedState(UnsupportedStateException exception) {
+        ExceptionHandlerResponse response = new ExceptionHandlerResponse("State указан не правильно", exception.getMessage());
         log.warn(response.toString());
         return response;
     }
