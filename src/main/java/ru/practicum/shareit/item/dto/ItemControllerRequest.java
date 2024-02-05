@@ -18,4 +18,5 @@ public class ItemControllerRequest {
     private String description;
     @NotNull(message = "Available пустой или null")
     private Boolean available;
+    private Long requestId;
 }

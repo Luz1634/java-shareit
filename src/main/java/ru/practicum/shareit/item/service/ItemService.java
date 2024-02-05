@@ -10,9 +10,9 @@ import java.util.List;
 public interface ItemService {
     ItemControllerResponse getItem(long userId, long itemId);
 
-    List<ItemControllerResponse> getOwnerItems(long userId);
+    List<ItemControllerResponse> getOwnerItems(long userId, int from, int size);
 
-    List<ItemControllerResponse> searchItems(String text);
+    List<ItemControllerResponse> searchItems(String text, int from, int size);
 
     ItemControllerResponse addItem(long userId, ItemControllerRequest item);
 

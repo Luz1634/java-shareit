@@ -35,20 +35,28 @@ public class ItemController {
 
     @GetMapping
     public List<ItemControllerResponse> getOwnerItems(@Min(value = 1, message = "UserId должно быть больше 0")
-                                                      @RequestHeader("X-Sharer-User-Id") long userId) {
-        log.info("GET запрос - getOwnerItems, UserId: " + userId);
-        return service.getOwnerItems(userId);
+                                                      @RequestHeader("X-Sharer-User-Id") long userId,
+                                                      @Min(value = 0, message = "from должно быть больше или равно 0")
+                                                      @RequestParam(defaultValue = "0") int from,
+                                                      @Min(value = 1, message = "size должно быть больше 0")
+                                                      @RequestParam(defaultValue = "20") int size) {
+        log.info("GET запрос - getOwnerItems, UserId: " + userId + ", from: " + from + ", size: " + size);
+        return service.getOwnerItems(userId, from, size);
     }
 
     @GetMapping("/search")
     public List<ItemControllerResponse> searchItems(@Min(value = 1, message = "UserId должно быть больше 0")
                                                     @RequestHeader("X-Sharer-User-Id") long userId,
-                                                    @RequestParam String text) {
-        log.info("GET запрос - searchItems, UserId: " + userId + ", Text: " + text);
+                                                    @RequestParam String text,
+                                                    @Min(value = 0, message = "from должно быть больше или равно 0")
+                                                    @RequestParam(defaultValue = "0") int from,
+                                                    @Min(value = 1, message = "size должно быть больше 0")
+                                                    @RequestParam(defaultValue = "20") int size) {
+        log.info("GET запрос - searchItems, UserId: " + userId + ", Text: " + text + ", from: " + from + ", size: " + size);
         if (text == null || text.isBlank()) {
             return new ArrayList<>();
         }
-        return service.searchItems(text);
+        return service.searchItems(text, from, size);
     }
 
     @PostMapping

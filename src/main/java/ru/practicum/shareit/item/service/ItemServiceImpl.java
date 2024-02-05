@@ -1,6 +1,9 @@
 package ru.practicum.shareit.item.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingStatus;
@@ -15,6 +18,7 @@ import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.CommentRepository;
 import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.request.repository.ItemRequestRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
@@ -33,6 +37,7 @@ public class ItemServiceImpl implements ItemService {
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
+    private final ItemRequestRepository itemRequestRepository;
     private final CommentMapper commentMapper;
 
     @Override
@@ -54,11 +59,13 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public List<ItemControllerResponse> getOwnerItems(long userId) {
+    public List<ItemControllerResponse> getOwnerItems(long userId, int from, int size) {
         userRepository.findById(userId)
                 .orElseThrow(() -> new GetNonExistObjectException("User с заданным id = " + userId + " не найден"));
 
-        List<ItemControllerResponse> itemsResponse = repository.findByOwnerId(userId)
+        Pageable sortedByStart = PageRequest.of(from / size, size);
+
+        List<ItemControllerResponse> itemsResponse = repository.findByOwnerId(userId, sortedByStart)
                 .stream()
                 .map(mapper::toItemControllerResponse)
                 .collect(toList());
@@ -72,8 +79,10 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public List<ItemControllerResponse> searchItems(String text) {
-        return repository.search(text)
+    public List<ItemControllerResponse> searchItems(String text, int from, int size) {
+        Pageable sortedByStart = PageRequest.of(from / size, size);
+
+        return repository.search(text, sortedByStart)
                 .stream()
                 .map(mapper::toItemControllerResponse)
                 .collect(toList());
@@ -86,6 +95,11 @@ public class ItemServiceImpl implements ItemService {
 
         Item item = mapper.toItem(itemRequest);
         item.setOwner(user);
+
+        if (itemRequest.getRequestId() != null) {
+            item.setRequest(itemRequestRepository.findById(itemRequest.getRequestId())
+                    .orElseThrow(() -> new GetNonExistObjectException("ItemRequest с заданным id = " + itemRequest.getRequestId() + " не найден")));
+        }
 
         return mapper.toItemControllerResponse(repository.save(item));
     }
@@ -132,6 +146,11 @@ public class ItemServiceImpl implements ItemService {
 
         itemUpdate.setId(itemId);
         itemUpdate.setOwner(itemOld.getOwner());
+
+        if (itemRequest.getRequestId() != null) {
+            itemUpdate.setRequest(itemRequestRepository.findById(itemRequest.getRequestId())
+                    .orElseThrow(() -> new GetNonExistObjectException("ItemRequest с заданным id = " + itemRequest.getRequestId() + " не найден")));
+        }
 
         return mapper.toItemControllerResponse(repository.save(itemUpdate));
     }
