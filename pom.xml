@@ -235,6 +235,10 @@
 					<plugin>
 						<groupId>org.jacoco</groupId>
 						<artifactId>jacoco-maven-plugin</artifactId>
+						<configuration>
+							<output>file</output>
+							<excludes>**/*ExceptionHandlerController.class</excludes>
+						</configuration>
 					</plugin>
 				</plugins>
 			</build>
