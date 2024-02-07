@@ -5,6 +5,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.dto.BookingRequest;
 import ru.practicum.shareit.booking.dto.BookingResponse;
 import ru.practicum.shareit.booking.mapper.BookingMapper;
@@ -27,6 +28,7 @@ import static java.util.stream.Collectors.toList;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class BookingServiceImpl implements BookingService {
 
     private final BookingRepository repository;
@@ -128,6 +130,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional
     public BookingResponse addBooking(long userId, BookingRequest bookingRequest) {
         User booker = userRepository.findById(userId)
                 .orElseThrow(() -> new GetNonExistObjectException("User с заданным id = " + userId + " не найден"));
@@ -150,6 +153,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional
     public BookingResponse approveBooking(long userId, long bookingId, boolean isApprove) {
         Booking booking = repository.findById(bookingId)
                 .orElseThrow(() -> new GetNonExistObjectException("Item с заданным id = " + bookingId + " не найден"));

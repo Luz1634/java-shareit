@@ -1,60 +1,89 @@
 package ru.practicum.shareit.booking.repository;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.booking.model.BookingStatus;
+import ru.practicum.shareit.exception.model.GetNonExistObjectException;
+import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.user.repository.UserRepository;
+
+import javax.persistence.EntityManager;
+import java.time.LocalDateTime;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DataJpaTest
 class BookingRepositoryTest {
 
-    @Test
-    void findByBookerId() {
-    }
+    @Autowired
+    private BookingRepository repository;
+    @Autowired
+    private ItemRepository itemRepository;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private EntityManager entityManager;
 
-    @Test
-    void findByBookerIdAndStatus() {
-    }
+    @BeforeEach
+    @Transactional
+    void fillingDB() {
+        entityManager.createNativeQuery("ALTER TABLE users ALTER COLUMN id RESTART WITH 1;").executeUpdate();
+        entityManager.createNativeQuery("ALTER TABLE items ALTER COLUMN id RESTART WITH 1;").executeUpdate();
+        entityManager.createNativeQuery("ALTER TABLE bookings ALTER COLUMN id RESTART WITH 1;").executeUpdate();
 
-    @Test
-    void findByBookerIdAndEndBefore() {
-    }
+        for (int i = 1; i <= 5; ++i) {
+            userRepository.save(new User(i, "name " + i, "user" + i + "@email.com"));
+        }
 
-    @Test
-    void findByBookerIdAndStartBeforeAndEndAfter() {
-    }
+        User user = userRepository.findById(1L).orElseThrow(() -> new GetNonExistObjectException("test"));
+        for (int i = 1; i <= 5; ++i) {
+            itemRepository.save(new Item(i, "item name " + i, "description " + i, true, user, null, null));
+        }
 
-    @Test
-    void findByBookerIdAndStartAfter() {
-    }
+        user = userRepository.findById(2L).orElseThrow(() -> new GetNonExistObjectException("test"));
+        for (int i = 6; i <= 10; ++i) {
+            itemRepository.save(new Item(i, "item name " + i, "description " + i, true, user, null, null));
+        }
 
-    @Test
-    void findByItem_OwnerId() {
-    }
+        Item item = itemRepository.findById(1L).orElseThrow(() -> new GetNonExistObjectException("test"));
+        for (int i = 1; i <= 3; ++i) {
+            LocalDateTime start = LocalDateTime.of(i, 1, 1, 1, 1, 1);
+            LocalDateTime end = LocalDateTime.of(1 + i, 1, 1, 1, 1, 1);
+            repository.save(new Booking(i, start, end, item, user, BookingStatus.APPROVED));
+        }
 
-    @Test
-    void findByItem_OwnerIdAndStatus() {
-    }
-
-    @Test
-    void findByItem_OwnerIdAndEndBefore() {
-    }
-
-    @Test
-    void findByItem_OwnerIdAndStartBeforeAndEndAfter() {
-    }
-
-    @Test
-    void findByItem_OwnerIdAndStartAfter() {
+        for (int i = 4; i <= 5; ++i) {
+            LocalDateTime start = LocalDateTime.of(3000 + i, 1, 1, 1, 1, 1);
+            LocalDateTime end = LocalDateTime.of(4000 + i, 1, 1, 1, 1, 1);
+            repository.save(new Booking(i, start, end, item, user, BookingStatus.APPROVED));
+        }
     }
 
     @Test
     void findFirstByItemIdAndItem_OwnerIdAndStartBeforeAndStatusOrderByStartDesc() {
+        Booking lastBooking = repository
+                .findFirstByItemIdAndItem_OwnerIdAndStartBeforeAndStatusOrderByStartDesc(
+                1, 1, LocalDateTime.now(), BookingStatus.APPROVED);
+
+        assertEquals(3, lastBooking.getId());
+        assertEquals(3, lastBooking.getStart().getYear());
+        assertEquals(4, lastBooking.getEnd().getYear());
     }
 
     @Test
     void findFirstByItemIdAndItem_OwnerIdAndStartAfterAndStatusOrderByStartAsc() {
-    }
+        Booking nextBooking = repository
+                .findFirstByItemIdAndItem_OwnerIdAndStartAfterAndStatusOrderByStartAsc(
+                        1, 1, LocalDateTime.now(), BookingStatus.APPROVED);
 
-    @Test
-    void findFirstByBookerIdAndItemIdAndEndBefore() {
+        assertEquals(4, nextBooking.getId());
+        assertEquals(3004, nextBooking.getStart().getYear());
+        assertEquals(4004, nextBooking.getEnd().getYear());
     }
 }
