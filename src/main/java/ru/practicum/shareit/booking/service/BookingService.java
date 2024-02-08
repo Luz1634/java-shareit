@@ -8,9 +8,9 @@ import java.util.List;
 public interface BookingService {
     BookingResponse getBooking(long userId, long bookingId);
 
-    List<BookingResponse> getUserBookings(long userId, String state);
+    List<BookingResponse> getOwnerBookings(long userId, String state, int from, int size);
 
-    List<BookingResponse> getOwnerBookings(long userId, String state);
+    List<BookingResponse> getUserBookings(long userId, String state, int from, int size);
 
     BookingResponse addBooking(long userId, BookingRequest booking);
 

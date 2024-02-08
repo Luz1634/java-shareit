@@ -1,7 +1,11 @@
 package ru.practicum.shareit.booking.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.dto.BookingRequest;
 import ru.practicum.shareit.booking.dto.BookingResponse;
 import ru.practicum.shareit.booking.mapper.BookingMapper;
@@ -24,6 +28,7 @@ import static java.util.stream.Collectors.toList;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class BookingServiceImpl implements BookingService {
 
     private final BookingRepository repository;
@@ -44,33 +49,75 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingResponse> getUserBookings(long userId, String state) {
+    public List<BookingResponse> getOwnerBookings(long userId, String state, int from, int size) {
+        itemRepository.findFirstByOwnerId(userId)
+                .orElseThrow(() -> new GetNonExistObjectException("User с заданным id = " + userId + " не найден или не имеет своих предметов"));
+
+        List<Booking> bookings;
+        Pageable sortedByStart = PageRequest.of(from / size, size, Sort.by("start").descending());
+
+        switch (state) {
+            case "ALL":
+                bookings = repository.findByItem_OwnerId(userId, sortedByStart);
+                break;
+            case "WAITING":
+                bookings = repository.findByItem_OwnerIdAndStatus(userId, BookingStatus.WAITING, sortedByStart);
+                break;
+            case "REJECTED":
+                bookings = repository.findByItem_OwnerIdAndStatus(userId, BookingStatus.REJECTED, sortedByStart);
+                break;
+            case "PAST":
+                bookings = repository.findByItem_OwnerIdAndEndBefore(userId, LocalDateTime.now(), sortedByStart);
+                break;
+            case "CURRENT":
+                bookings = repository.findByItem_OwnerIdAndStartBeforeAndEndAfter(
+                        userId,
+                        LocalDateTime.now(),
+                        LocalDateTime.now(),
+                        sortedByStart);
+                break;
+            case "FUTURE":
+                bookings = repository.findByItem_OwnerIdAndStartAfter(userId, LocalDateTime.now(), sortedByStart);
+                break;
+            default:
+                throw new UnsupportedStateException("Unknown state: " + state);
+        }
+
+        return bookings.stream()
+                .map(mapper::toBookingResponse)
+                .collect(toList());
+    }
+
+    @Override
+    public List<BookingResponse> getUserBookings(long userId, String state, int from, int size) {
         userRepository.findById(userId)
                 .orElseThrow(() -> new GetNonExistObjectException("User с заданным id = " + userId + " не найден"));
 
         List<Booking> bookings;
+        Pageable sortedByStart = PageRequest.of(from / size, size, Sort.by("start").descending());
 
         switch (state) {
             case "ALL":
-                bookings = repository.findByBookerIdOrderByStartDesc(userId);
+                bookings = repository.findByBookerId(userId, sortedByStart);
                 break;
             case "WAITING":
-                bookings = repository.findByBookerIdAndStatusOrderByStartDesc(userId, BookingStatus.WAITING);
+                bookings = repository.findByBookerIdAndStatus(userId, BookingStatus.WAITING, sortedByStart);
                 break;
             case "REJECTED":
-                bookings = repository.findByBookerIdAndStatusOrderByStartDesc(userId, BookingStatus.REJECTED);
+                bookings = repository.findByBookerIdAndStatus(userId, BookingStatus.REJECTED, sortedByStart);
                 break;
             case "PAST":
-                bookings = repository.findByBookerIdAndEndBeforeOrderByStartDesc(userId, LocalDateTime.now());
+                bookings = repository.findByBookerIdAndEndBefore(userId, LocalDateTime.now(), sortedByStart);
                 break;
             case "CURRENT":
-                bookings = repository.findByBookerIdAndStartBeforeAndEndAfterOrderByStartDesc(
+                bookings = repository.findByBookerIdAndStartBeforeAndEndAfter(
                         userId,
                         LocalDateTime.now(),
-                        LocalDateTime.now());
+                        LocalDateTime.now(),
+                        sortedByStart);
                 break;
             case "FUTURE":
-                bookings = repository.findByBookerIdAndStartAfterOrderByStartDesc(userId, LocalDateTime.now());
+                bookings = repository.findByBookerIdAndStartAfter(userId, LocalDateTime.now(), sortedByStart);
                 break;
             default:
                 throw new UnsupportedStateException("Unknown state: " + state);
@@ -83,45 +130,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingResponse> getOwnerBookings(long userId, String state) {
-        if (itemRepository.findByOwnerId(userId).size() == 0) {
-            throw new GetNonExistObjectException("User с заданным id = " + userId + " не найден или не имеет своих предметов");
-        }
-
-        List<Booking> bookings;
-
-        switch (state) {
-            case "ALL":
-                bookings = repository.findByItem_OwnerIdOrderByStartDesc(userId);
-                break;
-            case "WAITING":
-                bookings = repository.findByItem_OwnerIdAndStatusOrderByStartDesc(userId, BookingStatus.WAITING);
-                break;
-            case "REJECTED":
-                bookings = repository.findByItem_OwnerIdAndStatusOrderByStartDesc(userId, BookingStatus.REJECTED);
-                break;
-            case "PAST":
-                bookings = repository.findByItem_OwnerIdAndEndBeforeOrderByStartDesc(userId, LocalDateTime.now());
-                break;
-            case "CURRENT":
-                bookings = repository.findByItem_OwnerIdAndStartBeforeAndEndAfterOrderByStartDesc(
-                        userId,
-                        LocalDateTime.now(),
-                        LocalDateTime.now());
-                break;
-            case "FUTURE":
-                bookings = repository.findByItem_OwnerIdAndStartAfterOrderByStartDesc(userId, LocalDateTime.now());
-                break;
-            default:
-                throw new UnsupportedStateException("Unknown state: " + state);
-        }
-
-        return bookings.stream()
-                .map(mapper::toBookingResponse)
-                .collect(toList());
-    }
-
-    @Override
+    @Transactional
     public BookingResponse addBooking(long userId, BookingRequest bookingRequest) {
         User booker = userRepository.findById(userId)
                 .orElseThrow(() -> new GetNonExistObjectException("User с заданным id = " + userId + " не найден"));
@@ -144,6 +153,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional
     public BookingResponse approveBooking(long userId, long bookingId, boolean isApprove) {
         Booking booking = repository.findById(bookingId)
                 .orElseThrow(() -> new GetNonExistObjectException("Item с заданным id = " + bookingId + " не найден"));

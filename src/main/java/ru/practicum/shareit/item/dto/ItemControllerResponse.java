@@ -18,4 +18,5 @@ public class ItemControllerResponse {
     private ItemBookingInfoForOwner lastBooking;
     private ItemBookingInfoForOwner nextBooking;
     private List<CommentResponse> comments;
+    private long requestId;
 }

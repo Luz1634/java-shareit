@@ -1,7 +1,10 @@
 package ru.practicum.shareit.item.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.repository.BookingRepository;
@@ -15,6 +18,7 @@ import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.CommentRepository;
 import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.request.repository.ItemRequestRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
@@ -25,6 +29,7 @@ import static java.util.stream.Collectors.toList;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ItemServiceImpl implements ItemService {
 
     private final ItemRepository repository;
@@ -33,6 +38,7 @@ public class ItemServiceImpl implements ItemService {
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
+    private final ItemRequestRepository itemRequestRepository;
     private final CommentMapper commentMapper;
 
     @Override
@@ -54,11 +60,13 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public List<ItemControllerResponse> getOwnerItems(long userId) {
+    public List<ItemControllerResponse> getOwnerItems(long userId, int from, int size) {
         userRepository.findById(userId)
                 .orElseThrow(() -> new GetNonExistObjectException("User с заданным id = " + userId + " не найден"));
 
-        List<ItemControllerResponse> itemsResponse = repository.findByOwnerId(userId)
+        Pageable unsortedPageable = PageRequest.of(from / size, size);
+
+        List<ItemControllerResponse> itemsResponse = repository.findByOwnerId(userId, unsortedPageable)
                 .stream()
                 .map(mapper::toItemControllerResponse)
                 .collect(toList());
@@ -72,14 +80,17 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public List<ItemControllerResponse> searchItems(String text) {
-        return repository.search(text)
+    public List<ItemControllerResponse> searchItems(String text, int from, int size) {
+        Pageable unsortedPageable = PageRequest.of(from / size, size);
+
+        return repository.search(text, unsortedPageable)
                 .stream()
                 .map(mapper::toItemControllerResponse)
                 .collect(toList());
     }
 
     @Override
+    @Transactional
     public ItemControllerResponse addItem(long userId, ItemControllerRequest itemRequest) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GetNonExistObjectException("User с заданным id = " + userId + " не найден"));
@@ -87,10 +98,16 @@ public class ItemServiceImpl implements ItemService {
         Item item = mapper.toItem(itemRequest);
         item.setOwner(user);
 
+        if (itemRequest.getRequestId() != null) {
+            item.setRequest(itemRequestRepository.findById(itemRequest.getRequestId())
+                    .orElseThrow(() -> new GetNonExistObjectException("ItemRequest с заданным id = " + itemRequest.getRequestId() + " не найден")));
+        }
+
         return mapper.toItemControllerResponse(repository.save(item));
     }
 
     @Override
+    @Transactional
     public CommentResponse addComment(long userId, long itemId, CommentRequest commentRequest) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GetNonExistObjectException("User с заданным id = " + userId + " не найден"));
@@ -111,6 +128,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Transactional
     public ItemControllerResponse updateItem(long userId, long itemId, ItemControllerRequest itemRequest) {
         Item itemOld = repository.findById(itemId)
                 .orElseThrow(() -> new GetNonExistObjectException("Item с заданным id = " + itemId + " не найден"));
@@ -133,10 +151,16 @@ public class ItemServiceImpl implements ItemService {
         itemUpdate.setId(itemId);
         itemUpdate.setOwner(itemOld.getOwner());
 
+        if (itemRequest.getRequestId() != null) {
+            itemUpdate.setRequest(itemRequestRepository.findById(itemRequest.getRequestId())
+                    .orElseThrow(() -> new GetNonExistObjectException("ItemRequest с заданным id = " + itemRequest.getRequestId() + " не найден")));
+        }
+
         return mapper.toItemControllerResponse(repository.save(itemUpdate));
     }
 
     @Override
+    @Transactional
     public ItemControllerResponse deleteItem(long userId, long itemId) {
         Item item = repository.findById(itemId)
                 .orElseThrow(() -> new GetNonExistObjectException("Item с заданным id = " + itemId + " не найден"));

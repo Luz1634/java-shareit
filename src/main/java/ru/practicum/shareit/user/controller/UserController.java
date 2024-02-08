@@ -45,7 +45,7 @@ public class UserController {
 
     @PatchMapping("/{userId}")
     @Validated(OnUpdate.class)
-    public UserResponse updateUser(@Min(value = 1, message = "UserId должно быть больше 0")
+    public UserResponse updateUser(@Min(value = 1, message = "UserId должно быть больше 0", groups = OnUpdate.class)
                                    @PathVariable long userId,
                                    @Valid @RequestBody UserRequest userRequest) {
         log.info("PATCH запрос - updateUser, userId: " + userId + ", UserRequest:  " + userRequest.toString());

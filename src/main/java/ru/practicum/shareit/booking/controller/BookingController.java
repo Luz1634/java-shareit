@@ -30,20 +30,28 @@ public class BookingController {
         return service.getBooking(userId, bookingId);
     }
 
-    @GetMapping
-    public List<BookingResponse> getUserBookings(@Min(value = 1, message = "UserId должно быть больше 0")
-                                                 @RequestHeader("X-Sharer-User-Id") long userId,
-                                                 @RequestParam(defaultValue = "ALL") String state) {
-        log.info("GET запрос - getUserBookings, UserId: " + userId + ", State: " + state);
-        return service.getUserBookings(userId, state);
-    }
-
     @GetMapping("/owner")
     public List<BookingResponse> getOwnerBookings(@Min(value = 1, message = "UserId должно быть больше 0")
                                                   @RequestHeader("X-Sharer-User-Id") long userId,
-                                                  @RequestParam(defaultValue = "ALL") String state) {
-        log.info("GET запрос - getUserBookings, UserId: " + userId + ", State: " + state);
-        return service.getOwnerBookings(userId, state);
+                                                  @RequestParam(defaultValue = "ALL") String state,
+                                                  @Min(value = 0, message = "from должно быть больше или равно 0")
+                                                  @RequestParam(defaultValue = "0") int from,
+                                                  @Min(value = 1, message = "size должно быть больше 0")
+                                                  @RequestParam(defaultValue = "20") int size) {
+        log.info("GET запрос - getUserBookings, UserId: " + userId + ", State: " + state + ", from: " + from + ", size: " + size);
+        return service.getOwnerBookings(userId, state, from, size);
+    }
+
+    @GetMapping
+    public List<BookingResponse> getUserBookings(@Min(value = 1, message = "UserId должно быть больше 0")
+                                                 @RequestHeader("X-Sharer-User-Id") long userId,
+                                                 @RequestParam(defaultValue = "ALL") String state,
+                                                 @Min(value = 0, message = "from должно быть больше или равно 0")
+                                                 @RequestParam(defaultValue = "0") int from,
+                                                 @Min(value = 1, message = "size должно быть больше 0")
+                                                 @RequestParam(defaultValue = "20") int size) {
+        log.info("GET запрос - getUserBookings, UserId: " + userId + ", State: " + state + ", from: " + from + ", size: " + size);
+        return service.getUserBookings(userId, state, from, size);
     }
 
     @PostMapping
