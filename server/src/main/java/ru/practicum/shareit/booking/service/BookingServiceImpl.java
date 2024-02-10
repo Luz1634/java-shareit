@@ -10,6 +10,7 @@ import ru.practicum.shareit.booking.dto.BookingRequest;
 import ru.practicum.shareit.booking.dto.BookingResponse;
 import ru.practicum.shareit.booking.mapper.BookingMapper;
 import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.booking.model.BookingState;
 import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.exception.model.GetNonExistObjectException;
@@ -49,7 +50,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingResponse> getOwnerBookings(long userId, String state, int from, int size) {
+    public List<BookingResponse> getOwnerBookings(long userId, BookingState state, int from, int size) {
         itemRepository.findFirstByOwnerId(userId)
                 .orElseThrow(() -> new GetNonExistObjectException("User с заданным id = " + userId + " не найден или не имеет своих предметов"));
 
@@ -57,26 +58,26 @@ public class BookingServiceImpl implements BookingService {
         Pageable sortedByStart = PageRequest.of(from / size, size, Sort.by("start").descending());
 
         switch (state) {
-            case "ALL":
+            case ALL:
                 bookings = repository.findByItem_OwnerId(userId, sortedByStart);
                 break;
-            case "WAITING":
+            case WAITING:
                 bookings = repository.findByItem_OwnerIdAndStatus(userId, BookingStatus.WAITING, sortedByStart);
                 break;
-            case "REJECTED":
+            case REJECTED:
                 bookings = repository.findByItem_OwnerIdAndStatus(userId, BookingStatus.REJECTED, sortedByStart);
                 break;
-            case "PAST":
+            case PAST:
                 bookings = repository.findByItem_OwnerIdAndEndBefore(userId, LocalDateTime.now(), sortedByStart);
                 break;
-            case "CURRENT":
+            case CURRENT:
                 bookings = repository.findByItem_OwnerIdAndStartBeforeAndEndAfter(
                         userId,
                         LocalDateTime.now(),
                         LocalDateTime.now(),
                         sortedByStart);
                 break;
-            case "FUTURE":
+            case FUTURE:
                 bookings = repository.findByItem_OwnerIdAndStartAfter(userId, LocalDateTime.now(), sortedByStart);
                 break;
             default:
@@ -89,7 +90,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingResponse> getUserBookings(long userId, String state, int from, int size) {
+    public List<BookingResponse> getUserBookings(long userId, BookingState state, int from, int size) {
         userRepository.findById(userId)
                 .orElseThrow(() -> new GetNonExistObjectException("User с заданным id = " + userId + " не найден"));
 
@@ -97,26 +98,26 @@ public class BookingServiceImpl implements BookingService {
         Pageable sortedByStart = PageRequest.of(from / size, size, Sort.by("start").descending());
 
         switch (state) {
-            case "ALL":
+            case ALL:
                 bookings = repository.findByBookerId(userId, sortedByStart);
                 break;
-            case "WAITING":
+            case WAITING:
                 bookings = repository.findByBookerIdAndStatus(userId, BookingStatus.WAITING, sortedByStart);
                 break;
-            case "REJECTED":
+            case REJECTED:
                 bookings = repository.findByBookerIdAndStatus(userId, BookingStatus.REJECTED, sortedByStart);
                 break;
-            case "PAST":
+            case PAST:
                 bookings = repository.findByBookerIdAndEndBefore(userId, LocalDateTime.now(), sortedByStart);
                 break;
-            case "CURRENT":
+            case CURRENT:
                 bookings = repository.findByBookerIdAndStartBeforeAndEndAfter(
                         userId,
                         LocalDateTime.now(),
                         LocalDateTime.now(),
                         sortedByStart);
                 break;
-            case "FUTURE":
+            case FUTURE:
                 bookings = repository.findByBookerIdAndStartAfter(userId, LocalDateTime.now(), sortedByStart);
                 break;
             default:

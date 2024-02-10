@@ -2,17 +2,16 @@ package ru.practicum.shareit.user.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.shareit.user.client.UserClient;
 import ru.practicum.shareit.user.dto.UserRequest;
-import ru.practicum.shareit.user.dto.UserResponse;
-import ru.practicum.shareit.user.service.UserService;
 import ru.practicum.shareit.validation.group.OnCreate;
 import ru.practicum.shareit.validation.group.OnUpdate;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
-import java.util.List;
 
 @RestController
 @RequestMapping(path = "/users")
@@ -21,40 +20,40 @@ import java.util.List;
 @Validated
 public class UserController {
 
-    private final UserService service;
+    private final UserClient client;
 
     @GetMapping("/{userId}")
-    public UserResponse getUser(@Min(value = 1, message = "UserId должно быть больше 0")
-                                @PathVariable long userId) {
+    public ResponseEntity<Object> getUser(@Min(value = 1, message = "UserId должно быть больше 0")
+                                          @PathVariable long userId) {
         log.info("GET запрос - getUser, userId:  " + userId);
-        return service.getUser(userId);
+        return client.getUser(userId);
     }
 
     @GetMapping
-    public List<UserResponse> getAllUsers() {
+    public ResponseEntity<Object> getAllUsers() {
         log.info("GET запрос - getAllUsers");
-        return service.getAllUsers();
+        return client.getAllUsers();
     }
 
     @PostMapping
     @Validated(OnCreate.class)
-    public UserResponse addUser(@Valid @RequestBody UserRequest userRequest) {
+    public ResponseEntity<Object> addUser(@Valid @RequestBody UserRequest userRequest) {
         log.info("POST запрос - addUser, UserRequest: " + userRequest.toString());
-        return service.addUser(userRequest);
+        return client.addUser(userRequest);
     }
 
     @PatchMapping("/{userId}")
     @Validated(OnUpdate.class)
-    public UserResponse updateUser(@Min(value = 1, message = "UserId должно быть больше 0", groups = OnUpdate.class)
-                                   @PathVariable long userId,
-                                   @Valid @RequestBody UserRequest userRequest) {
+    public ResponseEntity<Object> updateUser(@Min(value = 1, message = "UserId должно быть больше 0", groups = OnUpdate.class)
+                                             @PathVariable long userId,
+                                             @Valid @RequestBody UserRequest userRequest) {
         log.info("PATCH запрос - updateUser, userId: " + userId + ", UserRequest:  " + userRequest.toString());
-        return service.updateUser(userId, userRequest);
+        return client.updateUser(userId, userRequest);
     }
 
     @DeleteMapping("/{userId}")
-    public UserResponse deleteUser(@Min(value = 1, message = "UserId должно быть больше 0") @PathVariable long userId) {
+    public ResponseEntity<Object> deleteUser(@Min(value = 1, message = "UserId должно быть больше 0") @PathVariable long userId) {
         log.info("DELETE запрос - deleteUser, userId: " + userId);
-        return service.deleteUser(userId);
+        return client.deleteUser(userId);
     }
 }

@@ -7,6 +7,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.practicum.shareit.booking.dto.BookingRequest;
 import ru.practicum.shareit.booking.dto.BookingResponse;
+import ru.practicum.shareit.booking.model.BookingState;
 import ru.practicum.shareit.booking.service.BookingService;
 
 import java.util.List;
@@ -36,7 +37,7 @@ class BookingControllerTest {
     void getOwnerBookings() {
         List<BookingResponse> bookingResponse = List.of();
 
-        when(service.getOwnerBookings(anyLong(), anyString(), anyInt(), anyInt())).thenReturn(bookingResponse);
+        when(service.getOwnerBookings(anyLong(), any(BookingState.class), anyInt(), anyInt())).thenReturn(bookingResponse);
 
         assertEquals(bookingResponse, controller.getOwnerBookings(1, "ALL", 0, 1));
     }
@@ -45,7 +46,7 @@ class BookingControllerTest {
     void getUserBookings() {
         List<BookingResponse> bookingResponse = List.of();
 
-        when(service.getUserBookings(anyLong(), anyString(), anyInt(), anyInt())).thenReturn(bookingResponse);
+        when(service.getUserBookings(anyLong(), any(BookingState.class), anyInt(), anyInt())).thenReturn(bookingResponse);
 
         assertEquals(bookingResponse, controller.getUserBookings(1, "ALL", 0, 1));
     }

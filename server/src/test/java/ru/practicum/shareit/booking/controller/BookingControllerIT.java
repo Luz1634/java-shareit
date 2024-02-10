@@ -10,14 +10,16 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import ru.practicum.shareit.booking.dto.BookingRequest;
 import ru.practicum.shareit.booking.dto.BookingResponse;
+import ru.practicum.shareit.booking.model.BookingState;
 import ru.practicum.shareit.booking.service.BookingService;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static ru.practicum.shareit.booking.model.BookingState.ALL;
 
 @WebMvcTest(BookingController.class)
 class BookingControllerIT {
@@ -51,22 +53,9 @@ class BookingControllerIT {
 
     @Test
     @SneakyThrows
-    void getBooking_whenIdIsNotValid() {
-        long userId = -1;
-        long bookingId = -1;
-
-        mockMvc.perform(MockMvcRequestBuilders.get("/bookings/{bookingId}", bookingId)
-                        .header("X-Sharer-User-Id", userId))
-                .andExpect(status().isBadRequest());
-
-        verify(service, never()).getBooking(userId, bookingId);
-    }
-
-    @Test
-    @SneakyThrows
     void getOwnerBookings_whenAllOk() {
         long userId = 1;
-        String state = "ALL";
+        BookingState state = ALL;
         int from = 0;
         int size = 1;
 
@@ -88,26 +77,9 @@ class BookingControllerIT {
 
     @Test
     @SneakyThrows
-    void getOwnerBookings_whenIdIsNotValid() {
-        long userId = -1;
-        String state = "ALL";
-        int from = -1;
-        int size = -1;
-
-        mockMvc.perform(MockMvcRequestBuilders.get("/bookings/owner")
-                        .header("X-Sharer-User-Id", userId)
-                        .param("from", from + "")
-                        .param("size", size + ""))
-                .andExpect(status().isBadRequest());
-
-        verify(service, never()).getOwnerBookings(userId, state, from, size);
-    }
-
-    @Test
-    @SneakyThrows
     void getUserBookings_whenAllOk() {
         long userId = 1;
-        String state = "ALL";
+        BookingState state = ALL;
         int from = 0;
         int size = 1;
 
@@ -125,23 +97,6 @@ class BookingControllerIT {
                 .getContentAsString();
 
         assertEquals(response, objectMapper.writeValueAsString(bookingResponses));
-    }
-
-    @Test
-    @SneakyThrows
-    void getUserBookings_whenIdIsNotValid() {
-        long userId = -1;
-        String state = "ALL";
-        int from = -1;
-        int size = -1;
-
-        mockMvc.perform(MockMvcRequestBuilders.get("/bookings")
-                        .header("X-Sharer-User-Id", userId)
-                        .param("from", from + "")
-                        .param("size", size + ""))
-                .andExpect(status().isBadRequest());
-
-        verify(service, never()).getUserBookings(userId, state, from, size);
     }
 
     @Test
@@ -171,23 +126,6 @@ class BookingControllerIT {
 
     @Test
     @SneakyThrows
-    void addBooking_whenIdAndBodyIsNotValid() {
-        long userId = -11;
-        BookingRequest bookingRequest = new BookingRequest();
-        bookingRequest.setStart(LocalDateTime.of(2, 1, 1, 1, 1, 1));
-        bookingRequest.setEnd(LocalDateTime.of(1, 1, 1, 1, 1, 1));
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/bookings")
-                        .header("X-Sharer-User-Id", userId)
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(bookingRequest)))
-                .andExpect(status().isBadRequest());
-
-        verify(service, never()).addBooking(userId, bookingRequest);
-    }
-
-    @Test
-    @SneakyThrows
     void approveBooking_whenAllOk() {
         long userId = 1;
         long bookingId = 1;
@@ -206,20 +144,5 @@ class BookingControllerIT {
                 .getContentAsString();
 
         assertEquals(response, objectMapper.writeValueAsString(bookingResponse));
-    }
-
-    @Test
-    @SneakyThrows
-    void approveBooking_whenIdIsNotValid() {
-        long userId = -1;
-        long bookingId = -1;
-        boolean approved = true;
-
-        mockMvc.perform(MockMvcRequestBuilders.patch("/bookings/{bookingId}", bookingId)
-                        .header("X-Sharer-User-Id", userId)
-                        .param("approved", approved + ""))
-                .andExpect(status().isBadRequest());
-
-        verify(service, never()).approveBooking(userId, bookingId, approved);
     }
 }

@@ -15,7 +15,7 @@ import ru.practicum.shareit.request.service.ItemRequestService;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ItemRequestController.class)
@@ -49,19 +49,6 @@ class ItemRequestControllerIT {
 
     @Test
     @SneakyThrows
-    void getItemRequest_whenIdIsNotValid() {
-        long userId = -1;
-        long requestId = -1;
-
-        mockMvc.perform(MockMvcRequestBuilders.get("/requests/{requestId}", requestId)
-                        .header("X-Sharer-User-Id", userId))
-                .andExpect(status().isBadRequest());
-
-        verify(service, never()).getItemRequest(userId, requestId);
-    }
-
-    @Test
-    @SneakyThrows
     void getOwnerItemRequests_whenAllOk() {
         long userId = 1;
 
@@ -77,18 +64,6 @@ class ItemRequestControllerIT {
                 .getContentAsString();
 
         assertEquals(response, objectMapper.writeValueAsString(itemRequestResponse));
-    }
-
-    @Test
-    @SneakyThrows
-    void getOwnerItemRequests_whenIdIsNotValid() {
-        long userId = -1;
-
-        mockMvc.perform(MockMvcRequestBuilders.get("/requests")
-                        .header("X-Sharer-User-Id", userId))
-                .andExpect(status().isBadRequest());
-
-        verify(service, never()).getOwnerItemRequests(userId);
     }
 
     @Test
@@ -116,22 +91,6 @@ class ItemRequestControllerIT {
 
     @Test
     @SneakyThrows
-    void getItemRequests_whenIdIsNotValid() {
-        long userId = -1;
-        int from = -1;
-        int size = -1;
-
-        mockMvc.perform(MockMvcRequestBuilders.get("/requests/all")
-                        .header("X-Sharer-User-Id", userId)
-                        .param("from", from + "")
-                        .param("size", size + ""))
-                .andExpect(status().isBadRequest());
-
-        verify(service, never()).getItemRequests(userId, from, size);
-    }
-
-    @Test
-    @SneakyThrows
     void addItemRequest_whenAllOk() {
         long userId = 1;
         ItemRequestRequest itemRequestRequest = new ItemRequestRequest();
@@ -151,21 +110,5 @@ class ItemRequestControllerIT {
                 .getContentAsString();
 
         assertEquals(response, objectMapper.writeValueAsString(itemRequestResponse));
-    }
-
-    @Test
-    @SneakyThrows
-    void addItemRequest_whenIdAndBodyIsNotValid() {
-        long userId = -1;
-        ItemRequestRequest itemRequestRequest = new ItemRequestRequest();
-        itemRequestRequest.setDescription("");
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/requests")
-                        .header("X-Sharer-User-Id", userId)
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(itemRequestRequest)))
-                .andExpect(status().isBadRequest());
-
-        verify(service, never()).addItemRequest(userId, itemRequestRequest);
     }
 }

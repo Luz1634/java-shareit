@@ -16,7 +16,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserController.class)
@@ -43,15 +43,6 @@ class UserControllerIT {
                 .getContentAsString();
 
         assertEquals(response, objectMapper.writeValueAsString(userResponse));
-    }
-
-    @Test
-    @SneakyThrows
-    void getUser_whenIdIsNotValid() {
-        mockMvc.perform(MockMvcRequestBuilders.get("/users/{userId}", 0))
-                .andExpect(status().isBadRequest());
-
-        verify(service, never()).getAllUsers();
     }
 
     @Test
@@ -94,19 +85,6 @@ class UserControllerIT {
 
     @Test
     @SneakyThrows
-    void addUser_whenUserRequestIsNotValid() {
-        UserRequest userRequest = new UserRequest();
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/users")
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(userRequest)))
-                .andExpect(status().isBadRequest());
-
-        verify(service, never()).addUser(userRequest);
-    }
-
-    @Test
-    @SneakyThrows
     void updateUser_whenAllOk() {
         long userId = 1;
         UserRequest userRequest = new UserRequest();
@@ -130,22 +108,6 @@ class UserControllerIT {
 
     @Test
     @SneakyThrows
-    void updateUser_whenIdAndUserRequestIsNotValid() {
-        long userId = -1;
-        UserRequest userRequest = new UserRequest();
-        userRequest.setName("name");
-        userRequest.setEmail("useremail.com");
-
-        mockMvc.perform(MockMvcRequestBuilders.patch("/users/{userId}", userId)
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(userRequest)))
-                .andExpect(status().isBadRequest());
-
-        verify(service, never()).updateUser(userId, userRequest);
-    }
-
-    @Test
-    @SneakyThrows
     void deleteUser_whenAllOk() {
         long userId = 1;
         UserResponse userResponse = new UserResponse();
@@ -159,16 +121,5 @@ class UserControllerIT {
                 .getContentAsString();
 
         assertEquals(response, objectMapper.writeValueAsString(userResponse));
-    }
-
-    @Test
-    @SneakyThrows
-    void deleteUser_whenIdAndUserRequestIsNotValid() {
-        long userId = -1;
-
-        mockMvc.perform(MockMvcRequestBuilders.delete("/users/{userId}", userId))
-                .andExpect(status().isBadRequest());
-
-        verify(service, never()).deleteUser(userId);
     }
 }
